@@ -5,7 +5,11 @@
     "version": "1.0",
     "action": {
       "default_popup": "ui/printer_list.html",
-      "default_icon": "ui/printer.png"
+      "default_icon": "ui/printer48.png"
+    },
+    "icons": {
+      "128": "ui/printer128.png",
+      "48": "ui/printer48.png"
     },
     "background": {
       "service_worker": "background.js"
