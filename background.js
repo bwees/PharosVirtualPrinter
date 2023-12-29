@@ -79,7 +79,7 @@ chrome.printerProvider.onGetPrintersRequested.addListener(function(resultCallbac
     })
 })
 
-function requestLogin(newUrl) {
+function requestLogin(newUrl, loginCallback) {
 
     // get server name from url
     var serverName = newUrl.split("/")[2]
@@ -111,62 +111,63 @@ function requestLogin(newUrl) {
 
                 // set original tab as active
                 chrome.tabs.update(originalTabId, {active: true})
+
+                loginCallback()
             }
         }, { urls: ["*://*/*"], tabId: tabId}, [])
     })
 }
 
 chrome.printerProvider.onPrintRequested.addListener(async function(printJob, resultCallback) {
-    requestLogin(printJob.printerId)
+    requestLogin(printJob.printerId, loginCallback)
 
-    const ticket = printJob.ticket
+    async function loginCallback() {
+        const ticket = printJob.ticket
 
-    const printConfig = {
-        "FinishingOptions":{
-            "Mono":ticket.print.color.type == "STANDARD_MONOCHROME",
-            "Duplex": ticket.print.duplex.type != "NO_DUPLEX",
-            "PagesPerSide": "1",
-            "Copies": String(ticket.print.copies.copies),
-            "DefaultPageSize":"Letter",
-            "PageRange":""
-        },
-        "PrinterName":""
-    }
-
-    console.log(printJob)
-    var extension;
-    switch (printJob.contentType) {
-        case "application/pdf":
-            extension = ".pdf"
-            break
-        case "image/jpeg":
-            extension = ".jpg"
-            break
-        case "text/plain":
-            extension = ".txt"
-            break
-    }
-
-    var data = new FormData()
-    data.append("MetaData", JSON.stringify(printConfig))
-    data.append("content", printJob.document, printJob.title+extension)
-
-
-    // get user id
-    var userId = (await (await fetch("https://"+printJob.printerId+"/PharosAPI/logon")).json()).Identifier
+        const printConfig = {
+            "FinishingOptions":{
+                "Mono":ticket.print.color.type == "STANDARD_MONOCHROME",
+                "Duplex": ticket.print.duplex.type != "NO_DUPLEX",
+                "PagesPerSide": "1",
+                "Copies": String(ticket.print.copies.copies),
+                "DefaultPageSize":"Letter",
+                "PageRange":""
+            },
+            "PrinterName":""
+        }
     
-    // upload to server
-    var upload = await fetch("https://"+printJob.printerId+"/PharosAPI/users/"+userId+"/printjobs", {
-        method: "POST",
-        body: data
-    })
-
-    console.log(await upload.text())
-
-    if (upload.status != 201) {
-        resultCallback("FAILED")
-    } else {
-        resultCallback("OK")
+        var extension;
+        switch (printJob.contentType) {
+            case "application/pdf":
+                extension = ".pdf"
+                break
+            case "image/jpeg":
+                extension = ".jpg"
+                break
+            case "text/plain":
+                extension = ".txt"
+                break
+        }
+    
+        var data = new FormData()
+        data.append("MetaData", JSON.stringify(printConfig))
+        data.append("content", printJob.document, printJob.title+extension)
+    
+    
+        // get user id
+        var userId = (await (await fetch("https://"+printJob.printerId+"/PharosAPI/logon")).json()).Identifier
+        
+        // upload to server
+        var upload = await fetch("https://"+printJob.printerId+"/PharosAPI/users/"+userId+"/printjobs", {
+            method: "POST",
+            body: data
+        })
+        
+        if (upload.status != 201) {
+            resultCallback("FAILED")
+        } else {
+            resultCallback("OK")
+        }
     }
 
 
