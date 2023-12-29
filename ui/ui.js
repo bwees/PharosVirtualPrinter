@@ -20,7 +20,6 @@ function requestLogin(newUrl) {
         newUrl = newUrl.substring(0, newUrl.length - 14)
     }
 
-    console.log(newUrl)
 
     var originalTabId
     // get current tab id
@@ -33,7 +32,6 @@ function requestLogin(newUrl) {
     // get tab id of new window
     chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
         var tabId = tabs[0].id
-        console.log(tabs[0])
 
         // onCompleted listener for requests from new window
         chrome.webRequest.onCompleted.addListener(function(details) {
@@ -143,7 +141,6 @@ function loadPrinters() {
         // Add printer button
         document.getElementById("add-printer").onclick = function() {
             var newUrl = document.getElementById("new-printer-url").value
-            console.log(newUrl)
             requestLogin(newUrl)
         } 
     })
