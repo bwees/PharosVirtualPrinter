@@ -1,0 +1,23 @@
+{
+    "manifest_version": 3,
+    "name": "Pharos Virtual Printer",
+    "description": "Extension to provide virtual printers to automatically upload documents to Pharos",
+    "version": "1.0",
+    "action": {
+      "default_popup": "ui/printer_list.html",
+      "default_icon": "ui/printer.png"
+    },
+    "background": {
+      "service_worker": "background.js"
+    },
+    "host_permissions": [
+      "https://*/*"
+    ],
+    "permissions": [
+      "tabs",
+      "activeTab",
+      "webRequest",
+      "storage",
+      "printerProvider"
+    ]
+  }
