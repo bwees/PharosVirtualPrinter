@@ -24,14 +24,13 @@ function requestLogin(newUrl) {
     var originalTabId
     // get current tab id
     chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-        var originalTabId = tabs[0].id
+        originalTabId = tabs[0].id
     })
 
-    var loginWindow = window.open(newUrl,'popUpWindow','height=500,width=600,left=100,top=100,resizable=yes,scrollbars=yes,toolbar=yes,menubar=no,location=no,directories=yes, status=yes')
+    window.open(newUrl,'popUpWindow','height=500,width=600,left=100,top=100,resizable=yes,scrollbars=yes,toolbar=yes,menubar=no,location=no,directories=yes, status=yes')
 
     // get tab id of new window
     chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-        var tabId = tabs[0].id
 
         // onCompleted listener for requests from new window
         chrome.webRequest.onCompleted.addListener(function(details) {
@@ -59,7 +58,7 @@ function requestLogin(newUrl) {
                         return
                     }
 
-                    printers.push({ name: serverName, serverName: serverName })
+                    printers.push({ name: serverName, serverName: serverName, show_after_upload: true })
                     chrome.storage.sync.set({printers: printers})
 
                     alert('Printer added successfully!');
@@ -83,13 +82,19 @@ function loadPrinters() {
         }
         
         printers.forEach(function(printer) {
+            console.log(printer.show_after_upload)
             // printer.serverName = "a"
             const printerElement = `
                 <div class="card mb-2" id="printer-${printer.serverName}">
                     <input type="text" class="form-control card-header" id="printer-name-${printer.serverName}" value="${printer.name}">
                     <div class="card-body">
                         <code>Server: ${printer.serverName}</code>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" role="switch" id="close-upload-${printer.serverName}" ${printer.show_after_upload && "checked"}>
+                            <label class="form-check-label" for="close-upload-${printer.serverName}">Show jobs after upload</label>
+                        </div>
                         <button type="button" class="btn btn-danger btn-sm mt-1" id="delete-printer-${printer.serverName}">Delete</button>
+                        
                     </div>
                 </div>
             `
@@ -133,6 +138,23 @@ function loadPrinters() {
                         }
                     })
 
+                    chrome.storage.sync.set({printers: printers})
+                })
+            }
+
+            document.getElementById(`close-upload-${printer.serverName}`).onchange = function() {                
+                chrome.storage.sync.get("printers", function(data) {
+                    var printers = data.printers
+                    if (printers == undefined) {
+                        printers = []
+                    }
+                    
+                    printers.forEach(function(p, index) {
+                        if (p.serverName == printer.serverName) {
+                            printers[index].show_after_upload = document.getElementById(`close-upload-${printer.serverName}`).checked
+                        }
+                    })
+    
                     chrome.storage.sync.set({printers: printers})
                 })
             }

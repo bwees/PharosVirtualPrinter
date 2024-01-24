@@ -79,10 +79,7 @@ chrome.printerProvider.onGetPrintersRequested.addListener(function(resultCallbac
     })
 })
 
-function requestLogin(newUrl, loginCallback) {
-
-    // get server name from url
-    var serverName = newUrl.split("/")[2]
+function requestLogin(newUrl, shouldClose, loginCallback) {
 
     if (!newUrl.startsWith("http")) {
         newUrl = "https://" + newUrl
@@ -106,20 +103,40 @@ function requestLogin(newUrl, loginCallback) {
         // onCompleted listener for requests from new window
         chrome.webRequest.onCompleted.addListener(function(details) {
             if (details.url.includes("/PharosAPI/logon") && details.statusCode == 200) {      
-                // close login window
-                chrome.tabs.remove(details.tabId)
+              loginCallback()
 
-                // set original tab as active
+              // close login window
+              if (shouldClose){
                 chrome.tabs.update(originalTabId, {active: true})
-
-                loginCallback()
+                chrome.tabs.remove(details.tabId)
+              } else {
+                chrome.tabs.update(details.tabId, {active: true})
+              }
             }
         }, { urls: ["*://*/*"], tabId: tabId}, [])
     })
 }
 
+async function shouldClose(printerId) {
+    return (await new Promise(function(resolve, reject) {
+        chrome.storage.sync.get("printers", function(data) {
+            var printers = data.printers
+            if (printers == undefined) {
+                printers = []
+            }
+            printers.forEach(function(printer) {
+                if (printer.serverName == printerId) {
+                    resolve(!printer.show_after_upload)
+                }
+            })
+            resolve(true)
+        })
+    }))
+}
+
 chrome.printerProvider.onPrintRequested.addListener(async function(printJob, resultCallback) {
-    requestLogin(printJob.printerId, loginCallback)
+    console.log(await shouldClose(printJob.printerId))
+    requestLogin(printJob.printerId, await shouldClose(printJob.printerId), loginCallback)
 
     async function loginCallback() {
         const ticket = printJob.ticket
