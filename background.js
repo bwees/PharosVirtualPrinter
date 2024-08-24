@@ -135,7 +135,6 @@ async function shouldClose(printerId) {
 }
 
 chrome.printerProvider.onPrintRequested.addListener(async function(printJob, resultCallback) {
-    console.log(await shouldClose(printJob.printerId))
     requestLogin(printJob.printerId, await shouldClose(printJob.printerId), loginCallback)
 
     async function loginCallback() {
